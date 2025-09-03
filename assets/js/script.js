@@ -15,7 +15,9 @@ let game = {
     gameOver: false,
     gameWon: false,
     barrelSpawnRate: 0.02,
-    barrelSpeed: 2
+    barrelSpeed: 2,
+    lastBarrelTime: 0,
+    barrelInterval: 3000  // 3 segundos em milissegundos
 };
 
 let barrels = [];
@@ -23,19 +25,19 @@ let keys = {};
 
 // Plataformas do jogo (bottom, left, width)
 const platforms = [
-    { bottom: 50, left: 0, width: 800 },
-    { bottom: 150, left: 100, width: 640 },
-    { bottom: 250, left: 0, width: 640 },
-    { bottom: 350, left: 100, width: 640 },
-    { bottom: 450, left: 0, width: 800 }
+    { bottom: 50, left: 0, width: 800 },        // 100% = 800px
+    { bottom: 150, left: 120, width: 600 },     // 75% = 600px  
+    { bottom: 250, left: 40, width: 600 },      // 75% = 600px
+    { bottom: 350, left: 10, width: 760 },      // 95% = 760px
+    { bottom: 450, left: 90, width: 704 }       // 88% = 704px
 ];
 
 // Escadas do jogo (bottom, left, height)
 const ladders = [
-    { bottom: 50, left: 750, height: 100 },
-    { bottom: 150, left: 50, height: 100 },
-    { bottom: 250, left: 750, height: 100 },
-    { bottom: 350, left: 50, height: 100 }
+    { bottom: 50, left: 720, height: 100 },
+    { bottom: 150, left: 80, height: 100 },
+    { bottom: 250, left: 680, height: 100 },
+    { bottom: 350, left: 120, height: 100 }
 ];
 
 // Elementos DOM
@@ -48,10 +50,17 @@ const gameArea = document.getElementById('gameArea');
 // Event listeners para controles
 document.addEventListener('keydown', (e) => {
     keys[e.code] = true;
+    e.preventDefault(); // Prevenir comportamento padrão das setas
 });
 
 document.addEventListener('keyup', (e) => {
     keys[e.code] = false;
+    e.preventDefault(); // Prevenir comportamento padrão das setas
+});
+
+// Garantir foco quando clicar na área do jogo
+gameArea.addEventListener('click', () => {
+    document.body.focus();
 });
 
 // Função para verificar colisão com plataformas
@@ -156,13 +165,16 @@ function movePlayer() {
 
 // Função para criar barril
 function createBarrel() {
-    if (Math.random() < game.barrelSpawnRate) {
+    const currentTime = Date.now();
+    
+    // Verificar se já passou o intervalo de 3 segundos
+    if (currentTime - game.lastBarrelTime >= game.barrelInterval) {
         const barrel = {
-            x: 120,
+            x: 650,  // Nova posição do Donkey Kong
             y: 490,
             width: 25,
             height: 25,
-            speedX: game.barrelSpeed,
+            speedX: -game.barrelSpeed,  // Velocidade negativa para ir para a esquerda
             speedY: 0,
             onPlatform: true,
             element: document.createElement('div')
@@ -174,6 +186,9 @@ function createBarrel() {
         barrelsContainer.appendChild(barrel.element);
         
         barrels.push(barrel);
+        
+        // Atualizar o tempo do último barril criado
+        game.lastBarrelTime = currentTime;
     }
 }
 
@@ -185,25 +200,47 @@ function moveBarrels() {
         // Movimento horizontal
         barrel.x += barrel.speedX;
         
-        // Verificar se chegou no final da plataforma
+        // Verificar se está em alguma plataforma
         let currentPlatform = null;
         for (let platform of platforms) {
-            if (barrel.y <= platform.bottom + 20 && barrel.y >= platform.bottom) {
-                if (barrel.x >= platform.left && barrel.x <= platform.left + platform.width - barrel.width) {
-                    currentPlatform = platform;
-                    break;
-                }
+            // Verificar se o barril está na altura da plataforma e dentro dos limites horizontais
+            if (barrel.y >= platform.bottom - 5 && barrel.y <= platform.bottom + 30 &&
+                barrel.x >= platform.left - 10 && 
+                barrel.x + barrel.width <= platform.left + platform.width + 10) {
+                currentPlatform = platform;
+                break;
+            }
+        }
+        
+        if (currentPlatform) {
+            // Está numa plataforma - ajustar posição Y e parar queda
+            barrel.y = currentPlatform.bottom + 20;
+            barrel.speedY = 0;
+            
+            // Verificar se chegou no final da plataforma para cair
+            if (barrel.x <= currentPlatform.left - 5) {
+                barrel.speedX = Math.abs(barrel.speedX); // Vai para direita
+            } else if (barrel.x + barrel.width >= currentPlatform.left + currentPlatform.width + 5) {
+                barrel.speedX = -Math.abs(barrel.speedX); // Vai para esquerda
+                // Se está saindo da plataforma, permitir queda
+                currentPlatform = null;
             }
         }
         
         if (!currentPlatform) {
-            // Não está em nenhuma plataforma - cair
-            barrel.y -= 5;
-            barrel.speedY = -5;
-        } else {
-            // Verificar se chegou no final da plataforma
-            if (barrel.x <= currentPlatform.left || barrel.x >= currentPlatform.left + currentPlatform.width - barrel.width) {
-                barrel.speedX *= -1; // Inverter direção
+            // Não está em nenhuma plataforma - aplicar gravidade
+            barrel.y -= 3;
+            barrel.speedY = -3;
+            
+            // Verificar se vai pousar numa plataforma abaixo
+            for (let platform of platforms) {
+                if (barrel.y <= platform.bottom + 25 && barrel.y >= platform.bottom - 5 &&
+                    barrel.x + barrel.width/2 >= platform.left && 
+                    barrel.x + barrel.width/2 <= platform.left + platform.width) {
+                    barrel.y = platform.bottom + 20;
+                    barrel.speedY = 0;
+                    break;
+                }
             }
         }
         
@@ -311,6 +348,14 @@ function initGame() {
     console.log('Donkey Kong Game iniciado!');
     console.log('Use as setas do teclado para mover');
     console.log('Suba nas escadas para chegar até a princesa!');
+    
+    // Garantir que o foco esteja na página
+    window.focus();
+    document.body.focus();
+    
+    // Adicionar tabindex para garantir que pode receber foco
+    document.body.setAttribute('tabindex', '0');
+    
     gameLoop();
 }
 
