@@ -26,9 +26,9 @@ let keys = {};
 // Plataformas do jogo (bottom, left, width)
 const platforms = [
     { bottom: 50, left: 0, width: 800 },        // 100% = 800px
-    { bottom: 150, left: 120, width: 600 },     // 75% = 600px  
-    { bottom: 250, left: 40, width: 600 },      // 75% = 600px
-    { bottom: 350, left: 10, width: 760 },      // 95% = 760px
+    { bottom: 150, left: 10, width: 700 },     // 75% = 600px  
+    { bottom: 250, left: 80, width: 700 },      // 75% = 600px
+    { bottom: 350, left: 10, width: 750 },      // 95% = 760px
     { bottom: 450, left: 90, width: 704 }       // 88% = 704px
 ];
 
