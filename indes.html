@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donkey Kong Game</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="score">Score: <span id="scoreValue">0</span></div>
+        <div id="lives">Lives: <span id="livesValue">3</span></div>
+        
+        <div id="gameArea">
+            <!-- Plataformas -->
+            <div class="platform" style="bottom: 50px; left: 0; width: 100%;"></div>
+            <div class="platform" style="bottom: 150px; left: 100px; width: 80%;"></div>
+            <div class="platform" style="bottom: 250px; left: 0; width: 80%;"></div>
+            <div class="platform" style="bottom: 350px; left: 100px; width: 80%;"></div>
+            <div class="platform" style="bottom: 450px; left: 0; width: 100%;"></div>
+            
+            <!-- Escadas -->
+            <div class="ladder" style="bottom: 50px; left: 750px; height: 100px;"></div>
+            <div class="ladder" style="bottom: 150px; left: 50px; height: 100px;"></div>
+            <div class="ladder" style="bottom: 250px; left: 750px; height: 100px;"></div>
+            <div class="ladder" style="bottom: 350px; left: 50px; height: 100px;"></div>
+            
+            <!-- Personagem jogador -->
+            <div id="player"></div>
+            
+            <!-- Donkey Kong -->
+            <div id="donkeyKong"></div>
+            
+            <!-- Princesa -->
+            <div id="princess"></div>
+            
+            <!-- Container para barris -->
+            <div id="barrels"></div>
+        </div>
+        
+        <div id="instructions">
+            <p>Use as setas para mover e subir/descer escadas</p>
+            <p>Evite os barris e chegue até a princesa!</p>
+        </div>
+    </div>
+
+    <script src="assets/js/script.js"></script>
+</body>
+</html>

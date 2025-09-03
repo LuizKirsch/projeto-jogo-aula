@@ -1,0 +1,237 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1a1a2e;
+    color: white;
+    overflow: hidden;
+}
+
+#gameContainer {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+#score, #lives {
+    position: absolute;
+    top: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 100;
+}
+
+#score {
+    left: 20px;
+}
+
+#lives {
+    right: 20px;
+}
+
+#gameArea {
+    width: 800px;
+    height: 600px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+    border: 3px solid #333;
+    overflow: hidden;
+}
+
+.platform {
+    position: absolute;
+    background-color: #8B4513;
+    height: 20px;
+    border: 2px solid #654321;
+    border-radius: 3px;
+}
+
+.ladder {
+    position: absolute;
+    width: 30px;
+    background-color: #DEB887;
+    border: 2px solid #CD853F;
+    background-image: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 5px,
+        #CD853F 5px,
+        #CD853F 7px
+    );
+}
+
+#player {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background-color: #FF0000;
+    border: 2px solid #CC0000;
+    border-radius: 5px;
+    bottom: 70px;
+    left: 50px;
+    z-index: 10;
+    transition: all 0.1s ease;
+}
+
+#player::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+    top: 5px;
+    left: 6px;
+}
+
+#player::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+    top: 5px;
+    right: 6px;
+}
+
+#donkeyKong {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background-color: #8B4513;
+    border: 3px solid #654321;
+    border-radius: 10px;
+    bottom: 470px;
+    left: 100px;
+    z-index: 10;
+}
+
+#donkeyKong::before {
+    content: '🦍';
+    position: absolute;
+    font-size: 40px;
+    top: 5px;
+    left: 10px;
+}
+
+#princess {
+    position: absolute;
+    width: 25px;
+    height: 30px;
+    background-color: #FFB6C1;
+    border: 2px solid #FF69B4;
+    border-radius: 5px;
+    bottom: 470px;
+    right: 50px;
+    z-index: 10;
+}
+
+#princess::before {
+    content: '👸';
+    position: absolute;
+    font-size: 20px;
+    top: 2px;
+    left: 2px;
+}
+
+.barrel {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    background-color: #D2691E;
+    border: 2px solid #A0522D;
+    border-radius: 50%;
+    z-index: 5;
+    transition: all 0.05s linear;
+}
+
+.barrel::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 3px;
+    background-color: #A0522D;
+    top: 5px;
+    left: 2px;
+}
+
+.barrel::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 3px;
+    background-color: #A0522D;
+    bottom: 5px;
+    left: 2px;
+}
+
+#instructions {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+#instructions p {
+    margin: 5px 0;
+}
+
+.game-over {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 0, 0, 0.9);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    font-size: 24px;
+    z-index: 1000;
+}
+
+.game-win {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 255, 0, 0.9);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    font-size: 24px;
+    z-index: 1000;
+}
+
+/* Animações */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.barrel {
+    animation: bounce 0.5s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.player-hit {
+    animation: blink 0.1s 3;
+}
