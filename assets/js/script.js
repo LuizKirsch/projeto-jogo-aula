@@ -32,6 +32,10 @@ const platforms = [
     { bottom: 450, left: 90, width: 704 }       // 88% = 704px
 ];
 
+
+//teste
+
+
 // Escadas do jogo (bottom, left, height)
 const ladders = [
     { bottom: 50, left: 720, height: 100 },
