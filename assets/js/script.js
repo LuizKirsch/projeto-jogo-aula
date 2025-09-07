@@ -25,11 +25,11 @@ let keys = {};
 
 // Plataformas do jogo (bottom, left, width)
 const platforms = [
-    { bottom: 50, left: 0, width: 800 },        // 100% = 800px
-    { bottom: 150, left: 10, width: 700 },     // 75% = 600px  
-    { bottom: 250, left: 80, width: 700 },      // 75% = 600px
-    { bottom: 350, left: 10, width: 750 },      // 95% = 760px
-    { bottom: 450, left: 90, width: 704 }       // 88% = 704px
+    { bottom: 50, left: 0, width: 800, slope: 'left' },      // 1ª: 100% = 800px
+    { bottom: 150, left: 10, width: 752, slope: 'right' },   // 2ª: 94% de 800px = 752px
+    { bottom: 250, left: 83, width: 712, slope: 'left' },    // 3ª: 89% de 800px = 712px
+    { bottom: 350, left: 10, width: 720, slope: 'right' },   // 4ª: 90% de 800px = 720px
+    { bottom: 450, left: 90, width: 704, slope: 'left' }     // 5ª: 88% de 800px = 704px
 ];
 
 
@@ -70,9 +70,9 @@ gameArea.addEventListener('click', () => {
 // Função para verificar colisão com plataformas
 function checkPlatformCollision(x, y) {
     for (let platform of platforms) {
-        if (x >= platform.left && 
+        if (x >= platform.left &&
             x <= platform.left + platform.width - player.width &&
-            y <= platform.bottom + 20 && 
+            y <= platform.bottom + 20 &&
             y >= platform.bottom) {
             return platform;
         }
@@ -83,9 +83,9 @@ function checkPlatformCollision(x, y) {
 // Função para verificar colisão com escadas
 function checkLadderCollision(x, y) {
     for (let ladder of ladders) {
-        if (x + player.width/2 >= ladder.left && 
-            x + player.width/2 <= ladder.left + 30 &&
-            y >= ladder.bottom && 
+        if (x + player.width / 2 >= ladder.left &&
+            x + player.width / 2 <= ladder.left + 30 &&
+            y >= ladder.bottom &&
             y <= ladder.bottom + ladder.height) {
             return ladder;
         }
@@ -99,7 +99,7 @@ function movePlayer() {
 
     let newX = player.x;
     let newY = player.y;
-    
+
     // Movimento horizontal
     if (keys['ArrowLeft'] || keys['KeyA']) {
         newX -= player.speed;
@@ -107,7 +107,7 @@ function movePlayer() {
     if (keys['ArrowRight'] || keys['KeyD']) {
         newX += player.speed;
     }
-    
+
     // Movimento vertical (escadas)
     if (keys['ArrowUp'] || keys['KeyW']) {
         let ladder = checkLadderCollision(player.x, player.y);
@@ -125,16 +125,16 @@ function movePlayer() {
             player.onLadder = false;
         }
     }
-    
+
     // Verificar limites da tela
     if (newX >= 0 && newX <= 770) {
         player.x = newX;
     }
-    
+
     // Verificar colisão com plataforma para movimento vertical
     let platformCollision = checkPlatformCollision(player.x, newY);
     let ladderCollision = checkLadderCollision(player.x, newY);
-    
+
     if (ladderCollision) {
         player.y = newY;
         player.onLadder = true;
@@ -147,7 +147,7 @@ function movePlayer() {
         // Gravidade
         player.y -= 3;
         player.onPlatform = false;
-        
+
         // Verificar se caiu numa plataforma
         let fallPlatform = checkPlatformCollision(player.x, player.y);
         if (fallPlatform) {
@@ -155,13 +155,13 @@ function movePlayer() {
             player.onPlatform = true;
         }
     }
-    
+
     // Verificar se chegou na princesa
     if (player.x + player.width >= 720 && player.y >= 450) {
         game.gameWon = true;
         showGameWin();
     }
-    
+
     // Atualizar posição visual
     playerElement.style.left = player.x + 'px';
     playerElement.style.bottom = player.y + 'px';
@@ -170,7 +170,7 @@ function movePlayer() {
 // Função para criar barril
 function createBarrel() {
     const currentTime = Date.now();
-    
+
     // Verificar se já passou o intervalo de 3 segundos
     if (currentTime - game.lastBarrelTime >= game.barrelInterval) {
         const barrel = {
@@ -183,14 +183,14 @@ function createBarrel() {
             onPlatform: true,
             element: document.createElement('div')
         };
-        
+
         barrel.element.className = 'barrel';
         barrel.element.style.left = barrel.x + 'px';
         barrel.element.style.bottom = barrel.y + 'px';
         barrelsContainer.appendChild(barrel.element);
-        
+
         barrels.push(barrel);
-        
+
         // Atualizar o tempo do último barril criado
         game.lastBarrelTime = currentTime;
     }
@@ -200,76 +200,82 @@ function createBarrel() {
 function moveBarrels() {
     for (let i = barrels.length - 1; i >= 0; i--) {
         let barrel = barrels[i];
-        
+
         // Movimento horizontal
         barrel.x += barrel.speedX;
-        
+
         // Verificar se está em alguma plataforma
         let currentPlatform = null;
         for (let platform of platforms) {
             // Verificar se o barril está na altura da plataforma e dentro dos limites horizontais
             if (barrel.y >= platform.bottom - 5 && barrel.y <= platform.bottom + 30 &&
-                barrel.x >= platform.left - 10 && 
+                barrel.x >= platform.left - 10 &&
                 barrel.x + barrel.width <= platform.left + platform.width + 10) {
                 currentPlatform = platform;
                 break;
             }
         }
-        
+
         if (currentPlatform) {
             // Está numa plataforma - ajustar posição Y e parar queda
             barrel.y = currentPlatform.bottom + 20;
             barrel.speedY = 0;
-            
+
             // Verificar se chegou no final da plataforma para cair
-            if (barrel.x <= currentPlatform.left - 5) {
-                barrel.speedX = Math.abs(barrel.speedX); // Vai para direita
-            } else if (barrel.x + barrel.width >= currentPlatform.left + currentPlatform.width + 5) {
-                barrel.speedX = -Math.abs(barrel.speedX); // Vai para esquerda
-                // Se está saindo da plataforma, permitir queda
+            if (
+                barrel.x <= currentPlatform.left - 5 ||
+                barrel.x + barrel.width >= currentPlatform.left + currentPlatform.width + 5
+            ) {
+                // Saiu da plataforma: permitir queda
                 currentPlatform = null;
             }
         }
-        
+
         if (!currentPlatform) {
             // Não está em nenhuma plataforma - aplicar gravidade
-            barrel.y -= 3;
-            barrel.speedY = -3;
-            
+            barrel.y -= 5;
+            barrel.speedY = -5;
+
             // Verificar se vai pousar numa plataforma abaixo
             for (let platform of platforms) {
                 if (barrel.y <= platform.bottom + 25 && barrel.y >= platform.bottom - 5 &&
-                    barrel.x + barrel.width/2 >= platform.left && 
-                    barrel.x + barrel.width/2 <= platform.left + platform.width) {
+                    barrel.x + barrel.width / 2 >= platform.left &&
+                    barrel.x + barrel.width / 2 <= platform.left + platform.width) {
                     barrel.y = platform.bottom + 20;
                     barrel.speedY = 0;
+                    // Define direção conforme inclinação
+                    if (platform.slope === 'right') {
+                        barrel.speedX = Math.abs(game.barrelSpeed);
+                    } else {
+                        barrel.speedX = -Math.abs(game.barrelSpeed);
+                    }
                     break;
                 }
             }
         }
-        
+
         // Verificar se pode descer por uma escada
         for (let ladder of ladders) {
-            if (barrel.x + barrel.width/2 >= ladder.left && 
-                barrel.x + barrel.width/2 <= ladder.left + 30 &&
+            if (barrel.x + barrel.width / 2 >= ladder.left &&
+                barrel.x + barrel.width / 2 <= ladder.left + 30 &&
                 Math.abs(barrel.y - ladder.bottom) < 30 &&
                 Math.random() < 0.01) {
                 barrel.y -= 2;
                 barrel.speedX = 0;
             }
         }
-        
+
         // Remover barris que saíram da tela
         if (barrel.y < -50) {
             barrel.element.remove();
             barrels.splice(i, 1);
             continue;
         }
-        
+
         // Atualizar posição visual
         barrel.element.style.left = barrel.x + 'px';
         barrel.element.style.bottom = barrel.y + 'px';
-        
+
         // Verificar colisão com jogador
         if (checkCollision(player, barrel)) {
             hitPlayer();
@@ -280,21 +286,21 @@ function moveBarrels() {
 // Função para verificar colisão
 function checkCollision(obj1, obj2) {
     return obj1.x < obj2.x + obj2.width &&
-           obj1.x + obj1.width > obj2.x &&
-           obj1.y < obj2.y + obj2.height &&
-           obj1.y + obj1.height > obj2.y;
+        obj1.x + obj1.width > obj2.x &&
+        obj1.y < obj2.y + obj2.height &&
+        obj1.y + obj1.height > obj2.y;
 }
 
 // Função quando jogador é atingido
 function hitPlayer() {
     game.lives--;
     livesElement.textContent = game.lives;
-    
+
     playerElement.classList.add('player-hit');
     setTimeout(() => {
         playerElement.classList.remove('player-hit');
     }, 300);
-    
+
     if (game.lives <= 0) {
         game.gameOver = true;
         showGameOver();
@@ -352,14 +358,14 @@ function initGame() {
     console.log('Donkey Kong Game iniciado!');
     console.log('Use as setas do teclado para mover');
     console.log('Suba nas escadas para chegar até a princesa!');
-    
+
     // Garantir que o foco esteja na página
     window.focus();
     document.body.focus();
-    
+
     // Adicionar tabindex para garantir que pode receber foco
     document.body.setAttribute('tabindex', '0');
-    
+
     gameLoop();
 }
 
