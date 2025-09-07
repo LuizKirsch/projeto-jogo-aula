@@ -5,12 +5,16 @@ let player = {
     width: 30,
     height: 30,
     speed: 5,
+    velocityY: 0,       
+    jumpForce: 8,      
+    gravity: 0.6,
+    isJumping: false,
     onLadder: false,
     onPlatform: true
 };
 
 let game = {
-    score: 0,
+    elapsedTime: "00:00",
     lives: 3,
     gameOver: false,
     gameWon: false,
@@ -32,10 +36,6 @@ const platforms = [
     { bottom: 450, left: 90, width: 704, slope: 'left' }     // 5ª: 88% de 800px = 704px
 ];
 
-
-//teste
-
-
 // Escadas do jogo (bottom, left, height)
 const ladders = [
     { bottom: 50, left: 720, height: 100 },
@@ -44,7 +44,6 @@ const ladders = [
     { bottom: 350, left: 120, height: 100 }
 ];
 
-// Elementos DOM
 const playerElement = document.getElementById('player');
 const barrelsContainer = document.getElementById('barrels');
 const scoreElement = document.getElementById('scoreValue');
@@ -54,7 +53,9 @@ const gameArea = document.getElementById('gameArea');
 // Event listeners para controles
 document.addEventListener('keydown', (e) => {
     keys[e.code] = true;
-    e.preventDefault(); // Prevenir comportamento padrão das setas
+    if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+        e.preventDefault();
+    }
 });
 
 document.addEventListener('keyup', (e) => {
@@ -86,7 +87,7 @@ function checkLadderCollision(x, y) {
         if (x + player.width / 2 >= ladder.left &&
             x + player.width / 2 <= ladder.left + 30 &&
             y >= ladder.bottom &&
-            y <= ladder.bottom + ladder.height) {
+            y <= ladder.bottom + ladder.height + 20) {
             return ladder;
         }
     }
@@ -108,22 +109,30 @@ function movePlayer() {
         newX += player.speed;
     }
 
-    // Movimento vertical (escadas)
-    if (keys['ArrowUp'] || keys['KeyW']) {
-        let ladder = checkLadderCollision(player.x, player.y);
-        if (ladder) {
-            newY += player.speed;
+    // Movimento na Escada 
+    let ladder = checkLadderCollision(player.x, player.y);
+    player.onLadder = false;
+
+    if (ladder) {
+        if (keys['ArrowUp'] || keys['KeyW']) {
+            player.y += player.speed;
+            player.onLadder = true;
+        } else if (keys['ArrowDown'] || keys['KeyS']) {
+            player.y -= player.speed;
             player.onLadder = true;
         }
     }
-    if (keys['ArrowDown'] || keys['KeyS']) {
-        let ladder = checkLadderCollision(player.x, player.y);
-        if (ladder) {
-            newY -= player.speed;
-            player.onLadder = true;
-        } else {
-            player.onLadder = false;
-        }
+
+    if (player.onLadder) {
+        player.isJumping = false;
+        player.velocityY = 0;
+    }
+
+    // Pular
+    if (keys['Space'] && player.onPlatform && !player.isJumping) {
+        player.velocityY = player.jumpForce;
+        player.isJumping = true;
+        player.onPlatform = false;
     }
 
     // Verificar limites da tela
@@ -131,28 +140,27 @@ function movePlayer() {
         player.x = newX;
     }
 
-    // Verificar colisão com plataforma para movimento vertical
-    let platformCollision = checkPlatformCollision(player.x, newY);
-    let ladderCollision = checkLadderCollision(player.x, newY);
+    if (!player.onLadder) {
+        player.y += player.velocityY;
+        player.velocityY -= player.gravity;
+    }
 
-    if (ladderCollision) {
-        player.y = newY;
-        player.onLadder = true;
-        player.onPlatform = false;
-    } else if (platformCollision && newY <= platformCollision.bottom + 20) {
-        player.y = platformCollision.bottom + 20;
-        player.onPlatform = true;
-        player.onLadder = false;
-    } else if (!player.onLadder) {
-        // Gravidade
-        player.y -= 3;
-        player.onPlatform = false;
-
-        // Verificar se caiu numa plataforma
-        let fallPlatform = checkPlatformCollision(player.x, player.y);
-        if (fallPlatform) {
-            player.y = fallPlatform.bottom + 20;
-            player.onPlatform = true;
+    let landedOnPlatform = false;
+    if (!player.onLadder && player.velocityY <= 0) {
+        for (const platform of platforms) {
+            if (player.x + player.width > platform.left &&
+                player.x < platform.left + platform.width)
+            {
+                let previousY = player.y - player.velocityY;
+                if (previousY >= platform.bottom + 20 && player.y <= platform.bottom + 20) {
+                    player.y = platform.bottom + 20;
+                    player.velocityY = 0;
+                    player.isJumping = false;
+                    player.onPlatform = true;
+                    landedOnPlatform = true;
+                    break;
+                }
+            }
         }
     }
 
@@ -255,15 +263,15 @@ function moveBarrels() {
         }
 
         // Verificar se pode descer por uma escada
-        for (let ladder of ladders) {
-            if (barrel.x + barrel.width / 2 >= ladder.left &&
-                barrel.x + barrel.width / 2 <= ladder.left + 30 &&
-                Math.abs(barrel.y - ladder.bottom) < 30 &&
-                Math.random() < 0.01) {
-                barrel.y -= 2;
-                barrel.speedX = 0;
-            }
-        }
+        // for (let ladder of ladders) {
+        //     if (barrel.x + barrel.width / 2 >= ladder.left &&
+        //         barrel.x + barrel.width / 2 <= ladder.left + 30 &&
+        //         Math.abs(barrel.y - ladder.bottom) < 30 &&
+        //         Math.random() < 0.01) {
+        //         barrel.y -= 2;
+        //         barrel.speedX = 0;
+        //     }
+        // }
 
         // Remover barris que saíram da tela
         if (barrel.y < -50) {
@@ -317,7 +325,7 @@ function showGameOver() {
     gameOverDiv.className = 'game-over';
     gameOverDiv.innerHTML = `
         <h2>Game Over!</h2>
-        <p>Score Final: ${game.score}</p>
+        <p>Tempo Final: ${game.elapsedTime}</p>
         <p>Pressione F5 para jogar novamente</p>
     `;
     document.body.appendChild(gameOverDiv);
@@ -330,16 +338,25 @@ function showGameWin() {
     gameWinDiv.innerHTML = `
         <h2>Você Venceu!</h2>
         <p>Parabéns! Você salvou a princesa!</p>
-        <p>Score Final: ${game.score}</p>
+        <p>Tempo Final: ${game.elapsedTime}</p>
         <p>Pressione F5 para jogar novamente</p>
     `;
     document.body.appendChild(gameWinDiv);
 }
 
-// Função para atualizar score
-function updateScore() {
-    game.score += 10;
-    scoreElement.textContent = game.score;
+// Função para atualizar tempo
+function updateTime() {
+    const currentTime = Date.now();
+    const elapsedSeconds = Math.floor((currentTime - game.startTime) / 1000);
+
+    const minutes = Math.floor(elapsedSeconds / 60);
+    const seconds = elapsedSeconds % 60;
+
+    const formattedTime = 
+        String(minutes).padStart(2, '0') + ':' + 
+        String(seconds).padStart(2, '0');
+    game.elapsedTime = formattedTime;
+    scoreElement.textContent = game.elapsedTime;
 }
 
 // Loop principal do jogo
@@ -348,13 +365,14 @@ function gameLoop() {
         movePlayer();
         createBarrel();
         moveBarrels();
-        updateScore();
+        updateTime();
     }
     requestAnimationFrame(gameLoop);
 }
 
 // Inicializar o jogo
 function initGame() {
+    game.startTime = Date.now()
     console.log('Donkey Kong Game iniciado!');
     console.log('Use as setas do teclado para mover');
     console.log('Suba nas escadas para chegar até a princesa!');
