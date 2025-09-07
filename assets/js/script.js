@@ -44,7 +44,6 @@ const ladders = [
     { bottom: 350, left: 120, height: 100 }
 ];
 
-// Elementos DOM
 const playerElement = document.getElementById('player');
 const barrelsContainer = document.getElementById('barrels');
 const scoreElement = document.getElementById('scoreValue');
