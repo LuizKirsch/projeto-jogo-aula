@@ -60,6 +60,7 @@ body {
     );
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     transform: rotate(-2deg);
+    
 }
 
 /* Variações de inclinação para cada plataforma */

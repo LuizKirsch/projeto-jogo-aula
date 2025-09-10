@@ -10,7 +10,8 @@ let player = {
     gravity: 0.6,
     isJumping: false,
     onLadder: false,
-    onPlatform: true
+    onPlatform: true,
+    currentPlatform: null
 };
 
 let game = {
@@ -29,11 +30,11 @@ let keys = {};
 
 // Plataformas do jogo (bottom, left, width)
 const platforms = [
-    { bottom: 50, left: 0, width: 800, slope: 'left' },      // 1ª: 100% = 800px
-    { bottom: 150, left: 10, width: 752, slope: 'right' },   // 2ª: 94% de 800px = 752px
-    { bottom: 250, left: 83, width: 712, slope: 'left' },    // 3ª: 89% de 800px = 712px
-    { bottom: 350, left: 10, width: 720, slope: 'right' },   // 4ª: 90% de 800px = 720px
-    { bottom: 450, left: 90, width: 704, slope: 'left' }     // 5ª: 88% de 800px = 704px
+    { bottom: 50, left: 0, width: 800, slope: 'left', rotation: -2 },      // 1ª: 100% = 800px
+    { bottom: 150, left: 10, width: 752, slope: 'right', rotation: 2 },   // 2ª: 94% de 800px = 752px
+    { bottom: 250, left: 83, width: 712, slope: 'left', rotation: -1.5 },    // 3ª: 89% de 800px = 712px
+    { bottom: 350, left: 10, width: 720, slope: 'right', rotation: 1.5 },   // 4ª: 90% de 800px = 720px
+    { bottom: 450, left: 90, width: 704, slope: 'left', rotation: -1 }     // 5ª: 88% de 800px = 704px
 ];
 
 // Escadas do jogo (bottom, left, height)
@@ -98,15 +99,38 @@ function checkLadderCollision(x, y) {
 function movePlayer() {
     if (game.gameOver || game.gameWon) return;
 
-    let newX = player.x;
-    let newY = player.y;
+    let onPlatformThisFrame = false;
+    let currentPlatform = null;
+
+    if (!player.onLadder && !player.isJumping) {
+        for (const platform of platforms) {
+            if (player.x + player.width > platform.left &&
+                player.x < platform.left + platform.width) {
+                
+                const angle = -platform.rotation * (Math.PI / 180);
+                const centerX = platform.left + platform.width / 2;
+                const surfaceYAtCenter = platform.bottom + 20;
+                const expectedY = surfaceYAtCenter + (player.x - centerX) * Math.tan(angle);
+
+                if (Math.abs(player.y - expectedY) < 10) {
+                    onPlatformThisFrame = true;
+                    currentPlatform = platform;
+                    break;
+                }
+            }
+        }
+    }
+    
+    player.onPlatform = onPlatformThisFrame;
+    player.currentPlatform = currentPlatform;
 
     // Movimento horizontal
+    let deltaX = 0;
     if (keys['ArrowLeft'] || keys['KeyA']) {
-        newX -= player.speed;
+        deltaX = -player.speed;
     }
     if (keys['ArrowRight'] || keys['KeyD']) {
-        newX += player.speed;
+        deltaX = player.speed;
     }
 
     // Movimento na Escada 
@@ -122,7 +146,6 @@ function movePlayer() {
             player.onLadder = true;
         }
     }
-
     if (player.onLadder) {
         player.isJumping = false;
         player.velocityY = 0;
@@ -133,35 +156,52 @@ function movePlayer() {
         player.velocityY = player.jumpForce;
         player.isJumping = true;
         player.onPlatform = false;
+        player.currentPlatform = null;
     }
 
     // Verificar limites da tela
+    const newX = player.x + deltaX;
     if (newX >= 0 && newX <= 770) {
         player.x = newX;
     }
 
-    if (!player.onLadder) {
+    // Se estiver no ar (pulando ou caindo)
+
+    if (!player.onPlatform && !player.onLadder) {
         player.y += player.velocityY;
         player.velocityY -= player.gravity;
-    }
 
-    let landedOnPlatform = false;
-    if (!player.onLadder && player.velocityY <= 0) {
-        for (const platform of platforms) {
-            if (player.x + player.width > platform.left &&
-                player.x < platform.left + platform.width)
-            {
-                let previousY = player.y - player.velocityY;
-                if (previousY >= platform.bottom + 20 && player.y <= platform.bottom + 20) {
-                    player.y = platform.bottom + 20;
-                    player.velocityY = 0;
-                    player.isJumping = false;
-                    player.onPlatform = true;
-                    landedOnPlatform = true;
-                    break;
+        if (player.velocityY <= 0) { 
+            for (const platform of platforms) {
+                if (player.x + player.width > platform.left &&
+                    player.x < platform.left + platform.width) {
+                    
+                    const angle = -platform.rotation * (Math.PI / 180);
+                    const centerX = platform.left + platform.width / 2;
+                    const surfaceYAtCenter = platform.bottom + 20;
+                    const expectedY = surfaceYAtCenter + (player.x - centerX) * Math.tan(angle);
+                    const previousY = player.y - player.velocityY;
+
+                    if (previousY >= expectedY && player.y <= expectedY) {
+                        player.y = expectedY; 
+                        player.velocityY = 0;
+                        player.isJumping = false;
+                        player.onPlatform = true;
+                        player.currentPlatform = platform;
+                        break;
+                    }
                 }
             }
         }
+    }
+
+    if (player.onPlatform && player.currentPlatform) {
+        const angle = -player.currentPlatform.rotation * (Math.PI / 180);
+        const centerX = player.currentPlatform.left + player.currentPlatform.width / 2;
+        const surfaceYAtCenter = player.currentPlatform.bottom + 20;
+
+        const platformY = surfaceYAtCenter + (player.x - centerX) * Math.tan(angle);
+        player.y = platformY;
     }
 
     // Verificar se chegou na princesa
